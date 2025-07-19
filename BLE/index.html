@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Сканер через Bluetooth</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #status { margin-top: 1em; color: green; }
+    #error { color: red; }
+  </style>
+</head>
+<body>
+
+<h1>Сканування з Bluetooth Сканера</h1>
+<button id="connectBtn">🔗 Підключити сканер</button>
+<div id="status">Стан: Не підключено</div>
+<div id="error"></div>
+
+<h2>Отримані коди:</h2>
+<ul id="scans"></ul>
+
+<script>
+  let device, characteristic;
+
+  document.getElementById('connectBtn').addEventListener('click', async () => {
+    try {
+      if (!navigator.bluetooth) {
+        showError("Ваш браузер не підтримує Web Bluetooth API");
+        return;
+      }
+
+      clearError();
+      updateStatus("Очікування вибору пристрою...");
+
+      // === Крок 1: Запит пристрою ===
+      device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: 'YourScanner' } // 🔄 Замінити на назву вашого сканера
+          // або використовуй services: ['your-service-uuid']
+        ],
+        optionalServices: ['battery_service', 'device_information'] // додай UUID сканера, якщо відомо
+      });
+
+      updateStatus(`Обрано пристрій: ${device.name}`);
+
+      // === Крок 2: Підключення ===
+      const server = await device.gatt.connect();
+      updateStatus("Підключено. Читання сервісів...");
+
+      // === Крок 3: Отримання сервісу та характеристики ===
+      const service = await server.getPrimaryService('your-service-uuid'); // ← заміни на справжній UUID
+      characteristic = await service.getCharacteristic('your-characteristic-uuid'); // ← заміни
+
+      updateStatus("Очікування даних від сканера...");
+
+      // === Крок 4: Підписка на нотифікації ===
+      await characteristic.startNotifications();
+      characteristic.addEventListener('characteristicvaluechanged', handleScan);
+
+    } catch (err) {
+      console.error(err);
+      showError("Помилка: " + err.message);
+    }
+  });
+
+  function handleScan(event) {
+    const value = event.target.value;
+    const decoder = new TextDecoder('utf-8');
+    const code = decoder.decode(value);
+
+    const li = document.createElement('li');
+    li.textContent = code;
+    document.getElementById('scans').appendChild(li);
+  }
+
+  function updateStatus(msg) {
+    document.getElementById('status').textContent = "Стан: " + msg;
+  }
+
+  function showError(msg) {
+    document.getElementById('error').textContent = msg;
+  }
+
+  function clearError() {
+    document.getElementById('error').textContent = '';
+  }
+</script>
+
+</body>
+</html>

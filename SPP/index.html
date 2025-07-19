@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scanned Codes</title>
+</head>
+<body>
+  <h1>📦 Scanned Codes</h1>
+  <ul id="list"></ul>
+
+  <script>
+    const list = document.getElementById('list');
+    const ws = new WebSocket('ws://localhost:8765');
+
+    ws.onmessage = (event) => {
+      const li = document.createElement('li');
+      li.textContent = event.data;
+      list.appendChild(li);
+    };
+  </script>
+</body>
+</html>

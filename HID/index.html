@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>HID Barcode Scanner</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 10px;
+      width: 300px;
+      margin-bottom: 10px;
+    }
+    ul {
+      margin-top: 20px;
+      padding-left: 20px;
+    }
+    li {
+      font-family: monospace;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📦 Barcode scanner (HID)</h1>
+
+  <label>
+    Manual input:
+    <input id="manualInput" type="text" placeholder="..." />
+  </label>
+
+  <ul id="log"></ul>
+
+  <script>
+    const manualInput = document.getElementById('manualInput');
+    const logList = document.getElementById('log');
+
+    let buffer = '';
+    let scanStartTime = 0;
+    let scanTimeout;
+
+    const IDLE_DELAY = 50;
+    const FINALIZE_DELAY = 100;
+    const MIN_LENGTH = 3;
+    const MAX_LENGTH = 100;
+
+    function log(code, source = 'scanner') {
+      const li = document.createElement('li');
+      li.textContent = `[${source}] ${code}`;
+      logList.appendChild(li);
+    }
+
+    function flushBuffer() {
+      const code = buffer.trim();
+      if (code.length >= MIN_LENGTH && code.length <= MAX_LENGTH) {
+        log(code);
+      }
+      buffer = '';
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (manualInput === document.activeElement) return;
+
+      const now = performance.now();
+
+      if (now - scanStartTime > IDLE_DELAY) {
+        buffer = '';
+      }
+
+      scanStartTime = now;
+
+      if (e.key === 'Enter') {
+        clearTimeout(scanTimeout);
+        flushBuffer();
+        return;
+      }
+
+      if (e.key.length === 1) {
+        buffer += e.key;
+      }
+
+      clearTimeout(scanTimeout);
+      scanTimeout = setTimeout(flushBuffer, FINALIZE_DELAY);
+    });
+
+    manualInput.addEventListener('change', () => {
+      const value = manualInput.value.trim();
+      if (value) {
+        log(value, 'manual');
+        manualInput.value = '';
+      }
+    });
+  </script>
+
+</body>
+</html>
