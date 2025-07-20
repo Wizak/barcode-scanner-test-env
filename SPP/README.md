@@ -1,53 +1,32 @@
 # 🔗 Barcode Scanner Web Bridge
 
-Цей проєкт дозволяє зчитувати баркоди з Bluetooth-сканера (SPP або HID через COM-порт) і передавати їх у веб-інтерфейс через WebSocket.
+This project allows you to scan barcodes using a Bluetooth scanner (SPP or HID via COM port) and transmit them to a web interface via WebSocket.
 
-## 🧰 Склад проекту
+## 🧰 Project Structure
 
-- `bridge.py` — читає COM-порт і передає дані у WebSocket.
-- `server.py` — WebSocket сервер (порт `8765`).
-- `index.html` — відображає скановані коди в браузері.
-- `start.bat` — скрипт запуску всіх компонентів.
-- `venv/` — Python virtual environment (створюється автоматично при запуску).
+- `bridge.py` — reads from the COM port and sends data to WebSocket.
+- `server.py` — WebSocket server (port `8765`).
+- `index.html` — displays scanned codes in the browser.
+- `start.bat` — script to launch all components.
+- `venv/` — Python virtual environment (automatically created on startup).
 
 ---
 
-## ⚙️ Налаштування
+## ⚙️ Setup
 
-1. Встанови [Python 3.10+](https://www.python.org/downloads/)
-2. Визнач свій COM-порт, до якого підключено сканер.
-   - В `bridge.py` заміни:
+1. Install [Python 3.10+](https://www.python.org/downloads/)
+2. Identify the COM port your scanner is connected to.
+   - In `bridge.py`, replace:
      ```python
      COM_PORT = 'COM4'
      BAUD_RATE = 9600
      ```
-3. Переконайся, що сканер працює в **SPP (Serial Port Profile)** режимі, і він з’являється у системі як COM-пристрій.
+3. Make sure your scanner is operating in **SPP (Serial Port Profile)** mode and appears in the system as a COM device.
 
 ---
 
-## ▶️ Запуск
+## ▶️ Launch
 
 ### 🪟 Windows:
 ```bat
 start.bat
-```
-
-
-> При першому запуску тебе буде запитано: створити `venv` автоматично? Підтверди, щоб скрипт усе зробив сам.
-
----
-
-## 🛠 Troubleshooting
-
-- Якщо WebSocket клієнт не отримує нові коди:
-  - Перевір, що `bridge.py` дійсно читає з COM-порту (`print` в консолі).
-- Якщо COM-порт зайнятий — переконайся, що жодна інша програма (наприклад, PuTTY або bridge.py) не використовує його паралельно.
-
----
-
-## 📦 Залежності
-
-Автоматично встановлюються при першому запуску:
-
-- `websockets`
-- `pyserial`

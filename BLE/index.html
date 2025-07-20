@@ -13,9 +13,9 @@
 </head>
 <body>
 
-<h1>🔗 BLE Сканер штрих-кодів</h1>
-<button id="connectBtn">Підключити сканер</button>
-<div id="status">Стан: Не підключено</div>
+<h1>🔗 BLE barcode scanner</h1>
+<button id="connectBtn">Connect device</button>
+<div id="status">State: Not connected</div>
 <div id="error"></div>
 
 <h2>📦 Отримані коди:</h2>
@@ -31,26 +31,26 @@
   document.getElementById('connectBtn').addEventListener('click', async () => {
     try {
       clearError();
-      updateStatus("Запит пристрою...");
+      updateStatus("Device request...");
 
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ name: SCANNER_NAME }],
         optionalServices: [SERVICE_UUID]
       });
 
-      updateStatus("Підключення до " + device.name + "...");
+      updateStatus("Connection to " + device.name + "...");
 
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(SERVICE_UUID);
       const characteristics = await service.getCharacteristics();
 
       notifyChar = characteristics.find(c => c.properties.notify && c.uuid === SERVICE_CHAR_UUID);
-      if (!notifyChar) throw new Error("Не знайдено notify-характеристику");
+      if (!notifyChar) throw new Error("Not found notify-characteristics");
 
       await notifyChar.startNotifications();
       notifyChar.addEventListener('characteristicvaluechanged', handleNotification);
 
-      updateStatus("Підключено. Очікуємо скан...");
+      updateStatus("Connected. Waiting for scan...");
     } catch (err) {
       showError("❌ " + err.message);
       console.error(err);
