@@ -2,74 +2,70 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Сканер через Bluetooth</title>
+  <title>BLE Barcode Scanner</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     #status { margin-top: 1em; color: green; }
     #error { color: red; }
+    ul { margin-top: 10px; }
+    li { margin: 4px 0; }
   </style>
 </head>
 <body>
 
-<h1>Сканування з Bluetooth Сканера</h1>
-<button id="connectBtn">🔗 Підключити сканер</button>
+<h1>🔗 BLE Сканер штрих-кодів</h1>
+<button id="connectBtn">Підключити сканер</button>
 <div id="status">Стан: Не підключено</div>
 <div id="error"></div>
 
-<h2>Отримані коди:</h2>
+<h2>📦 Отримані коди:</h2>
 <ul id="scans"></ul>
 
 <script>
-  let device, characteristic;
+  const SERVICE_UUID = '0000ae30-0000-1000-8000-00805f9b34fb';
+  const SERVICE_CHAR_UUID = '0000ae02-0000-1000-8000-00805f9b34fb';
+  const SCANNER_NAME = 'BARCODE SCANNER';
+
+  let notifyChar = null;
 
   document.getElementById('connectBtn').addEventListener('click', async () => {
     try {
-      if (!navigator.bluetooth) {
-        showError("Ваш браузер не підтримує Web Bluetooth API");
-        return;
-      }
-
       clearError();
-      updateStatus("Очікування вибору пристрою...");
+      updateStatus("Запит пристрою...");
 
-      // === Крок 1: Запит пристрою ===
-      device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'YourScanner' } // 🔄 Замінити на назву вашого сканера
-          // або використовуй services: ['your-service-uuid']
-        ],
-        optionalServices: ['battery_service', 'device_information'] // додай UUID сканера, якщо відомо
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: SCANNER_NAME }],
+        optionalServices: [SERVICE_UUID]
       });
 
-      updateStatus(`Обрано пристрій: ${device.name}`);
+      updateStatus("Підключення до " + device.name + "...");
 
-      // === Крок 2: Підключення ===
       const server = await device.gatt.connect();
-      updateStatus("Підключено. Читання сервісів...");
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      const characteristics = await service.getCharacteristics();
 
-      // === Крок 3: Отримання сервісу та характеристики ===
-      const service = await server.getPrimaryService('your-service-uuid'); // ← заміни на справжній UUID
-      characteristic = await service.getCharacteristic('your-characteristic-uuid'); // ← заміни
+      notifyChar = characteristics.find(c => c.properties.notify && c.uuid === SERVICE_CHAR_UUID);
+      if (!notifyChar) throw new Error("Не знайдено notify-характеристику");
 
-      updateStatus("Очікування даних від сканера...");
+      await notifyChar.startNotifications();
+      notifyChar.addEventListener('characteristicvaluechanged', handleNotification);
 
-      // === Крок 4: Підписка на нотифікації ===
-      await characteristic.startNotifications();
-      characteristic.addEventListener('characteristicvaluechanged', handleScan);
-
+      updateStatus("Підключено. Очікуємо скан...");
     } catch (err) {
+      showError("❌ " + err.message);
       console.error(err);
-      showError("Помилка: " + err.message);
     }
   });
 
-  function handleScan(event) {
+  function handleNotification(event) {
     const value = event.target.value;
-    const decoder = new TextDecoder('utf-8');
-    const code = decoder.decode(value);
+    const decoded = new TextDecoder().decode(value.buffer);
+    addScan(decoded);
+  }
 
+  function addScan(text) {
     const li = document.createElement('li');
-    li.textContent = code;
+    li.textContent = text;
     document.getElementById('scans').appendChild(li);
   }
 

@@ -9,15 +9,14 @@ set /p createVenv=Virtual environment not found. Create it now? (Y/N):
 if /I "%createVenv%"=="Y" (
     echo Creating virtual environment...
     python -m venv venv
+    call venv\Scripts\activate.bat
+    pip install -r requirements.txt >nul 2>&1
 ) else (
     echo Exiting.
     exit /b
 )
 
 :continue
-call venv\Scripts\activate.bat
-
-pip install -r requirements.txt >nul 2>&1
 
 echo [1] Starting WebSocket server...
 start cmd /k "call venv\Scripts\activate.bat && python server.py"
